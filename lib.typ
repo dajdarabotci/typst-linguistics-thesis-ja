@@ -1,4 +1,4 @@
-#import "package/leipzig-gloss.typ": example, abbreviations
+#import "package/leipzig-glossing/leipzig-gloss.typ": example, abbreviations
 #import abbreviations: *
 #import "@preview/cjk-unbreak:0.2.2": remove-cjk-break-space
 
@@ -140,7 +140,7 @@
   id: "[学生番号]",
   school: "[所属]",
   lab: "[研究室]",
-  mentor: "",
+  mentor: "[指導教員]",
   description: none,
   keywords: (),
   date: datetime.today(),
@@ -159,7 +159,7 @@
   cjkheight: 0.88, // height of CJK in em
   body
 ) = {
-  set document(title: title, author: author, description: description, keywords: keywords, date: date)
+  set document(title: title, author: author, description: description, keywords: keywords)
   if paper == "a3" { paper = (297mm, 420mm) }
   if paper == "a4" { paper = (210mm, 297mm) }
   if paper == "a5" { paper = (148mm, 210mm) }
@@ -186,7 +186,7 @@
     margin: (
       x: xmargin,
       top: ymargin,
-      bottom: ymargin ,
+      bottom: ymargin,
     ),
     columns: cols,
     footer: auto,

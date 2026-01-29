@@ -1,4 +1,4 @@
-/* 
+/*
   Copyright (C) 2023 Gregory Shuflin
   Licensed under the MIT License.
 
@@ -7,10 +7,11 @@
   Original Source:
   https://code.everydayimshuflin.com/greg/typst-lepizig-glossing/src/commit/92559deb83ba27e2fcc72c7bdf547b5a68d665e6
 
-  See the LICENSE file in this directory for the full license text. 
+  See the LICENSE file in this directory for the full license text.
   Modified by Dai Miyanishi (2026):
   - Changed numbering format to "(1)", "(1a)"
   - Removed `label-supplement` on subexample
+  - Replaced par with block
 */
 
 #import "abbreviations.typ"
@@ -34,7 +35,7 @@
   )
 
   let make-item-box(..args) = {
-    box(stack(dir: ttb, spacing: 0.5em, ..args))
+    box(stroke: 1pt, stack(dir: ttb, spacing: 0.5em, ..args))
   }
 
   for item-index in range(0, len) {
@@ -126,8 +127,8 @@
       }
     }
   }
-
-  align(left)[#gloss-items]
+  align(left)[#block(stroke: red + 1pt, gloss-items)]
+  //align(left)[#gloss-items]
 }
 
 
@@ -159,23 +160,21 @@
     if "label-supplement" in subexample-internal {
       let _ = subexample-internal.remove("label-supplement")
     }
-    par()[
-      #box()[
-        #figure(
-          kind: "subexample",
-          numbering: it => [#example-count.display("(1")#count.display("a)")],
-          outlined: false,
-          supplement: it => {
-            if "label-supplement" in subexample { return subexample.label-supplement } else { return none }
-          },
-          stack(
-            dir: ltr, //TODO this needs to be more flexible
-            [#context count.display(sub-num-pattern)],
-            left-padding,
-            gloss(..subexample-internal),
-          ),
-        ) #if "label" in subexample { std.label(subexample.label) }
-      ]
+    block(stroke: blue+1pt)[
+      #figure(
+        kind: "subexample",
+        numbering: it => [#example-count.display("(1")#count.display("a)")],
+        outlined: false,
+        supplement: it => {
+          if "label-supplement" in subexample { return subexample.label-supplement } else { return none }
+        },
+        stack(
+          dir: ltr, //TODO this needs to be more flexible
+          [#context count.display(sub-num-pattern)],
+          left-padding,
+          gloss(..subexample-internal),
+        ),
+      ) #if "label" in subexample { std.label(subexample.label) }
     ]
   }
 
@@ -190,7 +189,8 @@
   }
 
   context (
-    block(breakable: breakable)[
+    block(breakable: breakable, stroke: green+1pt)[
+      #show figure: set align(left)
       #figure(
         kind: "example",
         numbering: it => [#example-count.display("(1)")],
@@ -211,7 +211,7 @@
               subexample-count.update(0)
               set align(left)
               if "header" in args.named() {
-                par[#args.named().header]
+                block(stroke: 1pt)[#args.named().header]
               }
               for subexample in args.pos() {
                 subexample-count.step()
