@@ -11,7 +11,7 @@
   Modified by Dai Miyanishi (2026):
   - Changed numbering format to "(1)", "(1a)"
   - Removed `label-supplement` on subexample
-  - Replaced par with block
+  - Changed the layout method from stack to grid for position accuracy
 */
 
 #import "abbreviations.typ"
@@ -35,7 +35,7 @@
   )
 
   let make-item-box(..args) = {
-    box(stroke: 1pt, stack(dir: ttb, spacing: 0.5em, ..args))
+    box(stack(dir: ttb, spacing: 0.5em, ..args))
   }
 
   for item-index in range(0, len) {
@@ -51,7 +51,9 @@
       args.push(formatter-fn(item))
     }
     make-item-box(..args)
-    h(item-spacing)
+    if item-index < len - 1 {
+      h(item-spacing)
+    }
   }
 }
 
@@ -127,8 +129,7 @@
       }
     }
   }
-  align(left)[#block(stroke: red + 1pt, gloss-items)]
-  //align(left)[#gloss-items]
+  align(left)[#gloss-items]
 }
 
 
@@ -142,7 +143,7 @@
 #let example(
   label: none,
   label-supplement: [example],
-  gloss-padding: 2.5em, //TODO document these
+  gloss-padding: 1em,
   left-padding: 0.5em,
   numbering: false,
   breakable: false,
@@ -151,8 +152,6 @@
   ..args,
 ) = {
   let add-subexample(subexample, count) = {
-    // Remove parameters which are not used in the `gloss`.
-    // TODO Make this functional, if (or when) it’s possible in Typst: filter out `label` and `label-supplement` when they are passed below.
     let subexample-internal = subexample
     if "label" in subexample-internal {
       let _ = subexample-internal.remove("label")
@@ -160,19 +159,18 @@
     if "label-supplement" in subexample-internal {
       let _ = subexample-internal.remove("label-supplement")
     }
-    block(stroke: blue+1pt)[
+    [
       #figure(
         kind: "subexample",
-        numbering: it => [#example-count.display("(1")#count.display("a)")],
+        numbering: it => [#example-count.display("(1")#std.numbering("a)", count)],
         outlined: false,
         supplement: it => {
           if "label-supplement" in subexample { return subexample.label-supplement } else { return none }
         },
-        stack(
-          dir: ltr, //TODO this needs to be more flexible
-          [#context count.display(sub-num-pattern)],
-          left-padding,
-          gloss(..subexample-internal),
+        grid(
+          columns: 2,
+          column-gutter: left-padding,
+          std.numbering(sub-num-pattern, count), gloss(..subexample-internal),
         ),
       ) #if "label" in subexample { std.label(subexample.label) }
     ]
@@ -187,42 +185,39 @@
   } else {
     none
   }
-
-  context (
-    block(breakable: breakable, stroke: green+1pt)[
-      #show figure: set align(left)
-      #figure(
-        kind: "example",
-        numbering: it => [#example-count.display("(1)")],
-        outlined: false,
-        supplement: label-supplement,
-        stack(
-          dir: ltr, //TODO this needs to be more flexible
-          left-padding,
-          [#example-number],
-          gloss-padding - left-padding - measure([#example-number]).width,
-          {
-            if args.pos().len() == 1 {
-              // a simple example with no sub-examples
-              gloss(..arguments(..args.pos().at(0)))
-            } else {
-              // containing sub-examples
-              let subexample-count = counter("subexample-count")
-              subexample-count.update(0)
-              set align(left)
-              if "header" in args.named() {
-                block(stroke: 1pt)[#args.named().header]
-              }
-              for subexample in args.pos() {
-                subexample-count.step()
-                add-subexample(subexample, subexample-count)
-              }
-            }
-          },
-        ),
-      ) #if label != none { std.label(label) }
-    ]
-  )
+  let cells = ()
+  if args.pos().len() == 1 {
+    cells.push(
+      (example-number, gloss(..arguments(..args.pos().at(0)))),
+    )
+  } else {
+    let row = args.pos().len()
+    if "header" in args.named() {
+      row += 1
+      cells.push(args.named().header)
+    }
+    cells.insert(0, grid.cell(rowspan: row, example-number))
+    for (i, subexample) in args.pos().enumerate(start: 1) {
+      cells.push(
+        add-subexample(subexample, i),
+      )
+    }
+  }
+  [
+    #show figure: set align(left)
+    #figure(
+      kind: "example",
+      numbering: it => [#example-count.display("(1)")],
+      outlined: false,
+      supplement: label-supplement,
+      grid(
+        columns: 2,
+        row-gutter: 1em,
+        inset: ((left: gloss-padding), (left: left-padding)),
+        ..cells.flatten()
+      ),
+    ) #if label != none { std.label(label) }
+  ]
 }
 
 #let numbered-example = example.with(numbering: true)
